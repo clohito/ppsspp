@@ -552,7 +552,7 @@ bool retro_load_game(const struct retro_game_info *game) {
 	Core_SetGraphicsContext(ctx);
 	SetGPUBackend((GPUBackend)g_Config.iGPUBackend);
 
-	useEmuThread = ctx->GetGPUCore() == GPUCORE_GLES;
+	useEmuThread = false;
 
 	CoreParameter coreParam = {};
 	coreParam.enableSound = true;
@@ -573,10 +573,13 @@ bool retro_load_game(const struct retro_game_info *game) {
 #endif
 
 	std::string error_string;
+	INFO_LOG(SYSTEM, "PSP Init Start");
 	if (!PSP_InitStart(coreParam, &error_string)) {
 		ERROR_LOG(BOOT, "%s", error_string.c_str());
 		return false;
 	}
+
+	INFO_LOG(SYSTEM, "PSP Init Start Success");
 
 	return true;
 }
@@ -651,6 +654,7 @@ static void retro_input(void) {
 }
 
 void retro_run(void) {
+	INFO_LOG(SYSTEM, "retro_run");
 	if (PSP_IsIniting()) {
 		std::string error_string;
 #if 0

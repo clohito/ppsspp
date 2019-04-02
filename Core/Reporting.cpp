@@ -134,7 +134,7 @@ namespace Reporting
 
 		crcFilename = gamePath;
 		std::thread th(CalculateCRCThread);
-		th.detach();
+		th.join();
 	}
 
 	u32 RetrieveCRC() {
@@ -564,7 +564,7 @@ namespace Reporting
 		payload.string2 = temp;
 
 		std::thread th(Process, pos);
-		th.detach();
+		th.join();
 	}
 
 	void ReportMessageFormatted(const char *message, const char *formatted)
@@ -581,7 +581,7 @@ namespace Reporting
 		payload.string2 = formatted;
 
 		std::thread th(Process, pos);
-		th.detach();
+		th.join();
 	}
 
 	void ReportCompatibility(const char *compat, int graphics, int speed, int gameplay, const std::string &screenshotFilename)
@@ -601,7 +601,7 @@ namespace Reporting
 		payload.int3 = gameplay;
 
 		std::thread th(Process, pos);
-		th.detach();
+		th.join();
 	}
 
 	std::vector<std::string> CompatibilitySuggestions() {

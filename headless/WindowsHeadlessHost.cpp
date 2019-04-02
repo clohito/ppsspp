@@ -148,7 +148,7 @@ bool WindowsHeadlessHost::InitGraphics(std::string *error_message, GraphicsConte
 			gfx_->ShutdownFromRenderThread();
 			threadState_ = RenderThreadState::STOPPED;
 		});
-		th.detach();
+		th.join();
 	}
 
 	LoadNativeAssets();
