@@ -9,7 +9,7 @@
 
 #ifdef HAVE_LIBNX
 #include <switch.h>
-extern Jit jitController;
+extern Jit* activeJitController;
 #endif
 
 // Everything that needs to generate code should inherit from this.
@@ -31,7 +31,7 @@ public:
 	}
 
 	virtual void SetCodePtr(u8 *ptr) = 0;
-	virtual const u8 *GetCodePtr() = 0;
+	virtual const u8 *GetCodePtr() const = 0;
 
 	u8 *GetBasePtr() {
 		return region;
@@ -65,9 +65,13 @@ public:
 		// The protection will be set to RW if PlatformIsWXExclusive.
         
 #ifdef HAVE_LIBNX
-        jitCreate(&jitController, size);
-        printf("[NXJIT]: Initialized RX: %x RW: %x\n", jitController.rx_addr, jitController.rw_addr);
-        region = (u8*)jitController.rw_addr;
+		if(R_FAILED(jitCreate(&jitController, size))) 
+		{
+			printf("Failed to create Jitbuffer of size %d\n", size);
+		}
+		printf("[NXJIT]: Initialized RX: %x RW: %x\n", jitController.rx_addr, jitController.rw_addr);
+		region = (u8*)jitController.rx_addr;
+		activeJitController = &jitController;
 #else
 		region = (u8*)AllocateExecutableMemory(region_size);
 #endif
@@ -78,18 +82,14 @@ public:
 	// uninitialized, it just breaks into the debugger.
 	void ClearCodeSpace(int offset) {
 		if (PlatformIsWXExclusive()) {
-#ifndef HAVE_LIBNX
 			ProtectMemoryPages(region, region_size, MEM_PROT_READ | MEM_PROT_WRITE);
-#endif
 		}
 		// If not WX Exclusive, no need to call ProtectMemoryPages because we never change the protection from RWX.
 		PoisonMemory(offset);
 		ResetCodePtr(offset);
 		if (PlatformIsWXExclusive()) {
 			// Need to re-protect the part we didn't clear.
-#ifndef HAVE_LIBNX
 			ProtectMemoryPages(region, offset, MEM_PROT_READ | MEM_PROT_EXEC);
-#endif
 		}
 	}
 
@@ -102,24 +102,21 @@ public:
 			PanicAlert("Can't nest BeginWrite calls");
 		}
 #endif
-		writeStart_ = GetCodePtr();
-
+#ifdef HAVE_LIBNX
+		activeJitController = &jitController;
+#endif
 		// In case the last block made the current page exec/no-write, let's fix that.
 		if (PlatformIsWXExclusive()) {
-#ifndef HAVE_LIBNX
+			writeStart_ = GetCodePtr();
 			ProtectMemoryPages(writeStart_, sizeEstimate, MEM_PROT_READ | MEM_PROT_WRITE);
-#endif
 		}
 	}
 
 	void EndWrite() {
 		// OK, we're done. Re-protect the memory we touched.
-		if (PlatformIsWXExclusive()) {
+		if (PlatformIsWXExclusive() && writeStart_ != nullptr) {
 			const uint8_t *end = GetCodePtr();
-
-#ifndef HAVE_LIBNX
 			ProtectMemoryPages(writeStart_, end - writeStart_, MEM_PROT_READ | MEM_PROT_EXEC);
-#endif
 			writeStart_ = nullptr;
 		}
 	}
@@ -129,9 +126,11 @@ public:
 #ifndef HAVE_LIBNX
 		ProtectMemoryPages(region, region_size, MEM_PROT_READ | MEM_PROT_WRITE);
 		FreeMemoryPages(region, region_size);
-#endif
+#else
+		activeJitController = nullptr;
 		jitClose(&jitController);
-
+		printf("[NXJIT]: Jit closed\n");
+#endif
 		region = nullptr;
 		region_size = 0;
 	}
@@ -140,7 +139,7 @@ public:
 		T::SetCodePointer(ptr);
 	}
 
-	const u8 *GetCodePtr() override {
+	const u8 *GetCodePtr() const override {
 			return T::GetCodePointer();
 	}
 
@@ -155,4 +154,3 @@ public:
 private:
 	const uint8_t *writeStart_;
 };
-
