@@ -281,6 +281,7 @@ static void check_variables(CoreParameter &coreParam) {
 	ppsspp_locked_cpu_speed.Update(&g_Config.iLockedCPUSpeed);
 	ppsspp_rendering_mode.Update(&g_Config.iRenderingMode);
 	ppsspp_cpu_core.Update((CPUCore *)&g_Config.iCpuCore);
+	ppsspp_cpu_core.Update((CPUCore *)&coreParam.cpuCore);
 
 	ppsspp_language.Update(&g_Config.iLanguage);
 	if (g_Config.iLanguage < 0) {
@@ -562,10 +563,10 @@ bool retro_load_game(const struct retro_game_info *game) {
 	coreParam.gpuCore = ctx->GetGPUCore();
 	coreParam.cpuCore = CPUCore::JIT;
 	check_variables(coreParam);
-	coreParam.cpuCore = CPUCore::IR_JIT;
-
-#if 0
-	g_Config.bVertexDecoderJit = (coreParam.cpuCore == CPU_JIT) ? true : false;
+	g_Config.bVertexDecoderJit = false;
+	
+#if 1
+	g_Config.bVertexDecoderJit = (coreParam.cpuCore == CPUCore::JIT) ? true : false;
 #endif
 
 	std::string error_string;
