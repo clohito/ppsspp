@@ -165,6 +165,7 @@ private:
 
 static RetroOption<CPUCore> ppsspp_cpu_core("ppsspp_cpu_core", "CPU Core", { { "jit", CPUCore::JIT }, { "IR jit", CPUCore::IR_JIT }, { "interpreter", CPUCore::INTERPRETER } });
 static RetroOption<int> ppsspp_locked_cpu_speed("ppsspp_locked_cpu_speed", "Locked CPU Speed", { { "off", 0 }, { "222MHz", 222 }, { "266MHz", 266 }, { "333MHz", 333 } });
+static RetroOption<bool> ppsspp_vertexjit("ppsspp_vertexjit", "JIT Vertex Decoding (JIT only)", true);
 static RetroOption<int> ppsspp_language("ppsspp_language", "Language", { { "automatic", -1 }, { "english", PSP_SYSTEMPARAM_LANGUAGE_ENGLISH }, { "japanese", PSP_SYSTEMPARAM_LANGUAGE_JAPANESE }, { "french", PSP_SYSTEMPARAM_LANGUAGE_FRENCH }, { "spanish", PSP_SYSTEMPARAM_LANGUAGE_SPANISH }, { "german", PSP_SYSTEMPARAM_LANGUAGE_GERMAN }, { "italian", PSP_SYSTEMPARAM_LANGUAGE_ITALIAN }, { "dutch", PSP_SYSTEMPARAM_LANGUAGE_DUTCH }, { "portuguese", PSP_SYSTEMPARAM_LANGUAGE_PORTUGUESE }, { "russian", PSP_SYSTEMPARAM_LANGUAGE_RUSSIAN }, { "korean", PSP_SYSTEMPARAM_LANGUAGE_KOREAN }, { "chinese_traditional", PSP_SYSTEMPARAM_LANGUAGE_CHINESE_TRADITIONAL }, { "chinese_simplified", PSP_SYSTEMPARAM_LANGUAGE_CHINESE_SIMPLIFIED } });
 static RetroOption<int> ppsspp_rendering_mode("ppsspp_rendering_mode", "Rendering Mode", { { "buffered", FB_BUFFERED_MODE }, { "nonbuffered", FB_NON_BUFFERED_MODE } });
 static RetroOption<bool> ppsspp_auto_frameskip("ppsspp_auto_frameskip", "Auto Frameskip", false);
@@ -191,6 +192,7 @@ static RetroOption<bool> ppsspp_cheats("ppsspp_cheats", "Internal Cheats Support
 void retro_set_environment(retro_environment_t cb) {
 	std::vector<retro_variable> vars;
 	vars.push_back(ppsspp_cpu_core.GetOptions());
+	vars.push_back(ppsspp_vertexjit.GetOptions());
 	vars.push_back(ppsspp_locked_cpu_speed.GetOptions());
 	vars.push_back(ppsspp_language.GetOptions());
 	vars.push_back(ppsspp_rendering_mode.GetOptions());
@@ -281,6 +283,7 @@ static void check_variables(CoreParameter &coreParam) {
 	ppsspp_locked_cpu_speed.Update(&g_Config.iLockedCPUSpeed);
 	ppsspp_rendering_mode.Update(&g_Config.iRenderingMode);
 	ppsspp_cpu_core.Update((CPUCore *)&g_Config.iCpuCore);
+	ppsspp_vertexjit.Update(&g_Config.bVertexDecoderJit);
 	ppsspp_cpu_core.Update((CPUCore *)&coreParam.cpuCore);
 
 	ppsspp_language.Update(&g_Config.iLanguage);
@@ -562,12 +565,11 @@ bool retro_load_game(const struct retro_game_info *game) {
 	coreParam.graphicsContext = ctx;
 	coreParam.gpuCore = ctx->GetGPUCore();
 	coreParam.cpuCore = CPUCore::JIT;
-	check_variables(coreParam);
 	g_Config.bVertexDecoderJit = false;
+	check_variables(coreParam);
 	
-#if 1
-	g_Config.bVertexDecoderJit = (coreParam.cpuCore == CPUCore::JIT) ? true : false;
-#endif
+	if(g_Config.bVertexDecoderJit)
+		g_Config.bVertexDecoderJit = (coreParam.cpuCore == CPUCore::JIT) ? true : false;
 
 	std::string error_string;
 	INFO_LOG(SYSTEM, "PSP Init Start");
