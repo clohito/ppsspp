@@ -167,7 +167,11 @@ static RetroOption<CPUCore> ppsspp_cpu_core("ppsspp_cpu_core", "CPU Core", { { "
 static RetroOption<int> ppsspp_locked_cpu_speed("ppsspp_locked_cpu_speed", "Locked CPU Speed", { { "off", 0 }, { "222MHz", 222 }, { "266MHz", 266 }, { "333MHz", 333 } });
 static RetroOption<bool> ppsspp_vertexjit("ppsspp_vertexjit", "JIT Vertex Decoding (JIT only)", true);
 static RetroOption<int> ppsspp_language("ppsspp_language", "Language", { { "automatic", -1 }, { "english", PSP_SYSTEMPARAM_LANGUAGE_ENGLISH }, { "japanese", PSP_SYSTEMPARAM_LANGUAGE_JAPANESE }, { "french", PSP_SYSTEMPARAM_LANGUAGE_FRENCH }, { "spanish", PSP_SYSTEMPARAM_LANGUAGE_SPANISH }, { "german", PSP_SYSTEMPARAM_LANGUAGE_GERMAN }, { "italian", PSP_SYSTEMPARAM_LANGUAGE_ITALIAN }, { "dutch", PSP_SYSTEMPARAM_LANGUAGE_DUTCH }, { "portuguese", PSP_SYSTEMPARAM_LANGUAGE_PORTUGUESE }, { "russian", PSP_SYSTEMPARAM_LANGUAGE_RUSSIAN }, { "korean", PSP_SYSTEMPARAM_LANGUAGE_KOREAN }, { "chinese_traditional", PSP_SYSTEMPARAM_LANGUAGE_CHINESE_TRADITIONAL }, { "chinese_simplified", PSP_SYSTEMPARAM_LANGUAGE_CHINESE_SIMPLIFIED } });
+#ifdef HAVE_LINBX
+static RetroOption<int> ppsspp_rendering_mode("ppsspp_rendering_mode", "Rendering Mode", { { "buffered", FB_BUFFERED_MODE } });
+#else
 static RetroOption<int> ppsspp_rendering_mode("ppsspp_rendering_mode", "Rendering Mode", { { "buffered", FB_BUFFERED_MODE }, { "nonbuffered", FB_NON_BUFFERED_MODE } });
+#endif
 static RetroOption<bool> ppsspp_auto_frameskip("ppsspp_auto_frameskip", "Auto Frameskip", false);
 static RetroOption<int> ppsspp_frameskip("ppsspp_frameskip", "Frameskip", 0, 10);
 static RetroOption<int> ppsspp_frameskiptype("ppsspp_frameskiptype", "Frameskip Type", 0, 10);
@@ -182,6 +186,7 @@ static RetroOption<int> ppsspp_texture_filtering("ppsspp_texture_filtering", "Te
 static RetroOption<int> ppsspp_texture_anisotropic_filtering("ppsspp_texture_anisotropic_filtering", "Anisotropic Filtering", { "off", "1x", "2x", "4x", "8x", "16x" });
 static RetroOption<bool> ppsspp_texture_deposterize("ppsspp_texture_deposterize", "Texture Deposterize", false);
 static RetroOption<bool> ppsspp_texture_replacement("ppsspp_texture_replacement", "Texture Replacement", false);
+static RetroOption<bool> ppsspp_disable_slow_framebuffer_effects("ppsspp_disable_slow_framebuffer_effects", "Disable slower effects (speedup)", false);
 static RetroOption<bool> ppsspp_gpu_hardware_transform("ppsspp_gpu_hardware_transform", "GPU Hardware T&L", true);
 static RetroOption<bool> ppsspp_vertex_cache("ppsspp_vertex_cache", "Vertex Cache (Speedhack)", true);
 static RetroOption<bool> ppsspp_separate_io_thread("ppsspp_separate_io_thread", "IO Threading", false);
@@ -210,6 +215,7 @@ void retro_set_environment(retro_environment_t cb) {
 	vars.push_back(ppsspp_texture_anisotropic_filtering.GetOptions());
 	vars.push_back(ppsspp_texture_deposterize.GetOptions());
 	vars.push_back(ppsspp_texture_replacement.GetOptions());
+	vars.push_back(ppsspp_disable_slow_framebuffer_effects.GetOptions());
 	vars.push_back(ppsspp_gpu_hardware_transform.GetOptions());
 	vars.push_back(ppsspp_vertex_cache.GetOptions());
 	vars.push_back(ppsspp_separate_io_thread.GetOptions());
@@ -266,6 +272,7 @@ static void check_variables(CoreParameter &coreParam) {
 	ppsspp_button_preference.Update(&g_Config.iButtonPreference);
 	ppsspp_fast_memory.Update(&g_Config.bFastMemory);
 	ppsspp_vertex_cache.Update(&g_Config.bVertexCache);
+	ppsspp_disable_slow_framebuffer_effects.Update(&g_Config.bDisableSlowFramebufEffects);
 	ppsspp_gpu_hardware_transform.Update(&g_Config.bHardwareTransform);
 	ppsspp_frameskip.Update(&g_Config.iFrameSkip);
 	ppsspp_frameskiptype.Update(&g_Config.iFrameSkipType);
@@ -282,9 +289,9 @@ static void check_variables(CoreParameter &coreParam) {
 	ppsspp_cheats.Update(&g_Config.bEnableCheats);
 	ppsspp_locked_cpu_speed.Update(&g_Config.iLockedCPUSpeed);
 	ppsspp_rendering_mode.Update(&g_Config.iRenderingMode);
-	ppsspp_cpu_core.Update((CPUCore *)&g_Config.iCpuCore);
 	ppsspp_vertexjit.Update(&g_Config.bVertexDecoderJit);
 	ppsspp_cpu_core.Update((CPUCore *)&coreParam.cpuCore);
+	g_Config.iCpuCore = (int)coreParam.cpuCore;
 
 	ppsspp_language.Update(&g_Config.iLanguage);
 	if (g_Config.iLanguage < 0) {
