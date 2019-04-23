@@ -218,7 +218,9 @@ void retro_set_environment(retro_environment_t cb) {
 	vars.push_back(ppsspp_disable_slow_framebuffer_effects.GetOptions());
 	vars.push_back(ppsspp_gpu_hardware_transform.GetOptions());
 	vars.push_back(ppsspp_vertex_cache.GetOptions());
+#ifndef HAVE_LIBNX
 	vars.push_back(ppsspp_separate_io_thread.GetOptions());
+#endif
 	vars.push_back(ppsspp_unsafe_func_replacements.GetOptions());
 	vars.push_back(ppsspp_cheats.GetOptions());
 	vars.push_back(ppsspp_io_timing_method.GetOptions());
@@ -283,7 +285,9 @@ static void check_variables(CoreParameter &coreParam) {
 	ppsspp_texture_anisotropic_filtering.Update(&g_Config.iAnisotropyLevel);
 	ppsspp_texture_deposterize.Update(&g_Config.bTexDeposterize);
 	ppsspp_texture_replacement.Update(&g_Config.bReplaceTextures);
+#ifndef HAVE_LIBNX
 	ppsspp_separate_io_thread.Update(&g_Config.bSeparateIOThread);
+#endif
 	ppsspp_unsafe_func_replacements.Update(&g_Config.bFuncReplacements);
 	ppsspp_cheats.Update(&g_Config.bEnableCheats);
 	ppsspp_locked_cpu_speed.Update(&g_Config.iLockedCPUSpeed);
@@ -578,6 +582,9 @@ bool retro_load_game(const struct retro_game_info *game) {
 	coreParam.gpuCore = ctx->GetGPUCore();
 	coreParam.cpuCore = CPUCore::JIT;
 	g_Config.bVertexDecoderJit = false;
+#ifdef HAVE_LIBNX
+	g_Config.bSeparateIOThread = false;
+#endif
 	check_variables(coreParam);
 	
 	if(g_Config.bVertexDecoderJit)
