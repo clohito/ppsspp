@@ -732,27 +732,46 @@ struct SaveStart {
 } // namespace SaveState
 
 size_t retro_serialize_size(void) {
+	// TODO: Libretro API extension to use the savestate queue
+	if (useEmuThread) {
+		EmuThreadPause();
+	}
+
 	SaveState::SaveStart state;
-	return (CChunkFileReader::MeasurePtr(state) + 0x800000) & ~0x7FFFFF;
+	return (CChunkFileReader::MeasurePtr(state) + 0x800000) & ~0x7FFFFF; // We don't unpause intentionally
 }
 
 bool retro_serialize(void *data, size_t size) {
-	EmuThreadPause();
+	// TODO: Libretro API extension to use the savestate queue
+	if (useEmuThread) {
+		EmuThreadPause(); // Does nothing if already paused
+	}
+	
 	SaveState::SaveStart state;
 	assert(CChunkFileReader::MeasurePtr(state) <= size);
 	bool retVal = CChunkFileReader::SavePtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
-	EmuThreadStart();
-	sleep_ms(4);
+
+	if (useEmuThread) {
+		EmuThreadStart();
+		sleep_ms(4);
+	}
 	
 	return retVal;
 }
 
 bool retro_unserialize(const void *data, size_t size) {
-	EmuThreadPause();
+	// TODO: Libretro API extension to use the savestate queue
+	if (useEmuThread) {
+		EmuThreadPause(); // Does nothing if already paused
+	}
+
 	SaveState::SaveStart state;
 	bool retVal = CChunkFileReader::LoadPtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
-	EmuThreadStart();
-	sleep_ms(4);
+
+	if (useEmuThread) {
+		EmuThreadStart();
+		sleep_ms(4);
+	}
 
 	return retVal;
 }
