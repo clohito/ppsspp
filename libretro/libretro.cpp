@@ -461,6 +461,7 @@ void EmuThreadStop() {
 		// Need to keep eating frames to allow the EmuThread to exit correctly.
 		continue;
 	}
+
 	emuThread.join();
 	emuThread = std::thread();
 	ctx->ThreadEnd();
@@ -470,8 +471,11 @@ void EmuThreadPause() {
 	if (emuThreadState != EmuThreadState::RUNNING) {
 		return;
 	}
+
 	emuThreadState = EmuThreadState::PAUSE_REQUESTED;
-	ctx->ThreadFrame();
+
+	ctx->ThreadFrame(); // Eat 1 frame
+
 	while (emuThreadState != EmuThreadState::PAUSED) {
 		sleep_ms(1);
 	}
@@ -686,6 +690,11 @@ void retro_run(void) {
 	retro_input();
 
 	if (useEmuThread) {
+		if(emuThreadState == EmuThreadState::PAUSED || emuThreadState == EmuThreadState::PAUSE_REQUESTED) {
+			ctx->SwapBuffers();
+			return;
+		}
+
 		if (emuThreadState != EmuThreadState::RUNNING) {
 			EmuThreadStart();
 		}
@@ -721,14 +730,24 @@ size_t retro_serialize_size(void) {
 }
 
 bool retro_serialize(void *data, size_t size) {
+	EmuThreadPause();
 	SaveState::SaveStart state;
 	assert(CChunkFileReader::MeasurePtr(state) <= size);
-	return CChunkFileReader::SavePtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
+	bool retVal = CChunkFileReader::SavePtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
+	EmuThreadStart();
+	sleep_ms(4);
+	
+	return retVal;
 }
 
 bool retro_unserialize(const void *data, size_t size) {
+	EmuThreadPause();
 	SaveState::SaveStart state;
-	return CChunkFileReader::LoadPtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
+	bool retVal = CChunkFileReader::LoadPtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
+	EmuThreadStart();
+	sleep_ms(4);
+
+	return retVal;
 }
 
 void *retro_get_memory_data(unsigned id) {
