@@ -163,7 +163,7 @@ private:
 	std::vector<std::pair<std::string, T>> list_;
 };
 
-static RetroOption<CPUCore> ppsspp_cpu_core("ppsspp_cpu_core", "CPU Core", { { "jit", CPUCore::JIT }, { "IR Interpreter", CPUCore::IR_JIT }, { "interpreter", CPUCore::INTERPRETER } });
+static RetroOption<CPUCore> ppsspp_cpu_core("ppsspp_cpu_core", "CPU Core", { { "jit", CPUCore::JIT }, { "IR Interpreter", CPUCore::IR_JIT }, { "Interpreter", CPUCore::INTERPRETER } });
 static RetroOption<int> ppsspp_locked_cpu_speed("ppsspp_locked_cpu_speed", "Locked CPU Speed", { { "off", 0 }, { "222MHz", 222 }, { "266MHz", 266 }, { "333MHz", 333 } });
 static RetroOption<bool> ppsspp_vertexjit("ppsspp_vertexjit", "JIT Vertex Decoding (JIT only)", true);
 static RetroOption<int> ppsspp_language("ppsspp_language", "Language", { { "automatic", -1 }, { "english", PSP_SYSTEMPARAM_LANGUAGE_ENGLISH }, { "japanese", PSP_SYSTEMPARAM_LANGUAGE_JAPANESE }, { "french", PSP_SYSTEMPARAM_LANGUAGE_FRENCH }, { "spanish", PSP_SYSTEMPARAM_LANGUAGE_SPANISH }, { "german", PSP_SYSTEMPARAM_LANGUAGE_GERMAN }, { "italian", PSP_SYSTEMPARAM_LANGUAGE_ITALIAN }, { "dutch", PSP_SYSTEMPARAM_LANGUAGE_DUTCH }, { "portuguese", PSP_SYSTEMPARAM_LANGUAGE_PORTUGUESE }, { "russian", PSP_SYSTEMPARAM_LANGUAGE_RUSSIAN }, { "korean", PSP_SYSTEMPARAM_LANGUAGE_KOREAN }, { "chinese_traditional", PSP_SYSTEMPARAM_LANGUAGE_CHINESE_TRADITIONAL }, { "chinese_simplified", PSP_SYSTEMPARAM_LANGUAGE_CHINESE_SIMPLIFIED } });
