@@ -48,6 +48,7 @@ retro_environment_t environ_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
+static bool serializeWasStepping = false;
 } // namespace Libretro
 
 using namespace Libretro;
@@ -733,27 +734,43 @@ struct SaveStart {
 
 size_t retro_serialize_size(void) {
 	// TODO: Libretro API extension to use the savestate queue
-	if (useEmuThread) {
-		EmuThreadPause();
-	}
+
+	serializeWasStepping = Core_IsStepping();
+	Core_EnableStepping(true);
+
+	// If we're on the CPU thread actually, this may just stall for 16ms...
+	Core_WaitInactive(16);
 
 	SaveState::SaveStart state;
-	return (CChunkFileReader::MeasurePtr(state) + 0x800000) & ~0x7FFFFF; // We don't unpause intentionally
+	return (CChunkFileReader::MeasurePtr(state) + 0x800000) & ~0x7FFFFF; // Intentionally leaving in stepping.
 }
 
 bool retro_serialize(void *data, size_t size) {
 	// TODO: Libretro API extension to use the savestate queue
-	if (useEmuThread) {
-		EmuThreadPause(); // Does nothing if already paused
+	
+	if (!Core_IsStepping()) {
+		NOTICE_LOG(SYSTEM, "retro_serialize_size() must be called before retro_serialize()");
+		return false;
+	}
+
+	SaveState::SaveStart state;
+
+	if (size < CChunkFileReader::MeasurePtr(state)) {
+		NOTICE_LOG(SYSTEM, "retro_serialize() called with a too small size");
+
+		if (!serializeWasStepping) {
+			Core_EnableStepping(false);
+			// No need to wait for active, it'll resume on its own.
+		}
+
+		return false;
 	}
 	
-	SaveState::SaveStart state;
-	assert(CChunkFileReader::MeasurePtr(state) <= size);
 	bool retVal = CChunkFileReader::SavePtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
 
-	if (useEmuThread) {
-		EmuThreadStart();
-		sleep_ms(4);
+	if (!serializeWasStepping) {
+		Core_EnableStepping(false);
+		// No need to wait for active, it'll resume on its own.
 	}
 	
 	return retVal;
@@ -761,16 +778,19 @@ bool retro_serialize(void *data, size_t size) {
 
 bool retro_unserialize(const void *data, size_t size) {
 	// TODO: Libretro API extension to use the savestate queue
-	if (useEmuThread) {
-		EmuThreadPause(); // Does nothing if already paused
-	}
 
+	serializeWasStepping = Core_IsStepping();
+	Core_EnableStepping(true);
+
+	// If we're on the CPU thread actually, this may just stall for 16ms...
+	Core_WaitInactive(16);
+	
 	SaveState::SaveStart state;
 	bool retVal = CChunkFileReader::LoadPtr((u8 *)data, state) == CChunkFileReader::ERROR_NONE;
 
-	if (useEmuThread) {
-		EmuThreadStart();
-		sleep_ms(4);
+	if (!serializeWasStepping) {
+		Core_EnableStepping(false);
+		// No need to wait for active, it'll resume on its own.
 	}
 
 	return retVal;
