@@ -36,11 +36,6 @@
 #include <mach/vm_param.h>
 #endif
 
-#ifdef HAVE_LIBNX
-#include <switch.h>
-static Jit jitController;
-#endif
-
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -183,13 +178,8 @@ void *AllocateExecutableMemory(size_t size) {
 	if (PlatformIsWXExclusive())
 		prot = PROT_READ | PROT_WRITE;  // POST_EXEC is added later in this case.
 
-#ifdef HAVE_LIBNX // Kept for later purposes, outside of CodeBlock.h
-    //detectIgnoreJitKernelPatch(); // Cant use it for this method
-    jitCreate(&jitController, size);
-    jitTransitionToExecutable(&jitController);
-    printf("AllocateExecutableMemory\n");
-    void* ptr = jitController.rx_addr;
-    svcSetProcessMemoryPermission(envGetOwnProcessHandle(), (u64)jitController.rx_addr, jitController.size, Perm_Rw);
+#ifdef HAVE_LIBNX
+	void* ptr = malloc(size);
 #else
 	void* ptr = mmap(map_hint, size, prot,
 		MAP_ANON | MAP_PRIVATE
@@ -278,6 +268,12 @@ void *AllocateAlignedMemory(size_t size, size_t alignment) {
 void FreeMemoryPages(void *ptr, size_t size) {
 	if (!ptr)
 		return;
+
+#ifdef HAVE_LIBNX
+	free(ptr);
+	return;
+#endif
+
 	uintptr_t page_size = GetMemoryProtectPageSize();
 	size = (size + page_size - 1) & (~(page_size - 1));
 #ifdef _WIN32

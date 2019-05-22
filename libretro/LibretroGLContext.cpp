@@ -39,7 +39,7 @@ void LibretroGLContext::CreateDrawContext() {
 		//}
 #endif
 		rglgen_resolve_symbols_custom(&eglGetProcAddress, &rglgen_symbol_map_ppsspp);
-		glewInitDone = true;
+		//glewInitDone = true;
 		
 		CheckGLExtensions();
 	}
