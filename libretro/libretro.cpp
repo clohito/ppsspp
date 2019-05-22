@@ -292,7 +292,6 @@ static void check_variables(CoreParameter &coreParam) {
 	ppsspp_cheats.Update(&g_Config.bEnableCheats);
 	ppsspp_locked_cpu_speed.Update(&g_Config.iLockedCPUSpeed);
 	ppsspp_rendering_mode.Update(&g_Config.iRenderingMode);
-	ppsspp_cpu_core.Update((CPUCore *)&g_Config.iCpuCore);
 	ppsspp_io_timing_method.Update((IOTimingMethods *)&g_Config.iIOTimingMethod);
 	ppsspp_vertexjit.Update(&g_Config.bVertexDecoderJit);
 	ppsspp_cpu_core.Update((CPUCore *)&coreParam.cpuCore);
